@@ -5,6 +5,8 @@ using UnityEngine.InputSystem;
 using UnityEngine.EventSystems;
 using UnityEngine.UI;
 using TMPro;
+using System.Linq;
+using Unity.VisualScripting;
 
 public class GameplayInventoryState : GameplayBaseState
 {
@@ -14,6 +16,13 @@ public class GameplayInventoryState : GameplayBaseState
 
     private PointerEventData click_data;
     private List<RaycastResult> click_results;
+
+    private bool being_dragged;
+    private GameObject drag_icon;
+
+    private GameObject initial_slot;
+    private string initial_slot_stack;
+    private List<int> slot_index = new List<int>();
 
     public override void EnterState(GameplayStateHandler player, PlayerCharacterInput player_input)
     {
@@ -26,73 +35,108 @@ public class GameplayInventoryState : GameplayBaseState
         ui_raycaster = player.inventory_canvas.GetComponent<GraphicRaycaster>();
         click_data = new PointerEventData(EventSystem.current);
         click_results = new List<RaycastResult>();
+
+        if (drag_icon == null) drag_icon = GameObject.Find("Canvas").transform.GetChild(0).gameObject;
     }
 
     public override void UpdateState(GameplayStateHandler player, PlayerCharacterInput player_input)
     {
+        if (being_dragged)
+        {
+            drag_icon.transform.position = new Vector3(Mouse.current.position.x.magnitude, Mouse.current.position.y.magnitude, 0f);
+        }
+
+        //initial click of drag
+        if (Mouse.current.leftButton.wasPressedThisFrame)
+        {
+            GameObject slot = GetSlot();
+            if (slot != null)
+            {
+                initial_slot = slot;
+                initial_slot_stack = slot.transform.GetChild(1).GetComponent<TextMeshProUGUI>().text;
+                Debug.Log("Slot stack size: " + initial_slot_stack);
+                if (slot.transform.GetChild(0).GetComponent<Image>().sprite != null)
+                {
+                    being_dragged = true;
+
+                    drag_icon.GetComponent<Image>().sprite = slot.transform.GetChild(0).GetComponent<Image>().sprite;
+                    slot.transform.GetChild(0).GetComponent<Image>().sprite = null;
+                    slot.transform.GetChild(1).GetComponent<TextMeshProUGUI>().text = "";
+
+                    drag_icon.SetActive(true);
+                }
+            }
+
+        }
+        else if (Mouse.current.leftButton.wasReleasedThisFrame)
+        {
+            GameObject slot = GetSlot();
+            if (slot != null && being_dragged)
+            {
+                Debug.Log("Adjust slots");
+                drag_icon.GetComponent<Image>().sprite = null;
+
+                Debug.Log("adjusted slot " + slot_index[0]);
+                player.slots[slot_index[0]].transform.GetChild(0).GetComponent<Image>().sprite = slot.GetComponent<ItemControl>().configuration.icon;
+                player.slots[slot_index[0]].transform.GetChild(1).GetComponent<TextMeshProUGUI>().text = slot.transform.GetChild(1).GetComponent<TextMeshProUGUI>().text;
+
+                Debug.Log("updated slot " + slot_index[1]);
+                player.slots[slot_index[1]].transform.GetChild(0).GetComponent<Image>().sprite = initial_slot.GetComponent<ItemControl>().configuration.icon;
+                player.slots[slot_index[1]].transform.GetChild(1).GetComponent<TextMeshProUGUI>().text = initial_slot_stack;
+
+            }
+            else if(slot == null && being_dragged)
+            {
+                Debug.Log("Reset slot " + slot_index[0]);
+                player.slots[slot_index[0]].transform.GetChild(0).GetComponent<Image>().sprite = initial_slot.GetComponent<ItemControl>().configuration.icon;
+                player.slots[slot_index[0]].transform.GetChild(1).GetComponent<TextMeshProUGUI>().text = initial_slot_stack;
+            }
+            slot_index.Clear();
+            being_dragged = false;
+            drag_icon.SetActive(false);
+        }
+
         //exit inventory
         if (!player_input.toggleInventory)
         {
-            if(selected_item_position >= 0) player.slots[selected_item_position - 1].GetComponent<Image>().color = Color.red;
+            drag_icon.SetActive(false);
+            if (selected_item_position >= 0) player.slots[selected_item_position - 1].GetComponent<Image>().color = Color.red;
             player.inventory_details.SetActive(false);
             player.SwitchState(player.PlayingState);
         }
-           
+    }
 
-        //if the player clicks the mouse and is within the bounds of a slot, set selected_item_position to the position in the inventory(list position)
+    GameObject GetSlot()
+    {
+        //get mouse position
+        click_data.position = Mouse.current.position.ReadValue();
 
-        if (Mouse.current.leftButton.wasReleasedThisFrame)
+        //clear previous list of objects
+        click_results.Clear();
+
+        //casts raycast and adds every UI collision
+        ui_raycaster.Raycast(click_data, click_results);
+        foreach (RaycastResult result in click_results)
         {
-            //get mouse position
-            click_data.position = Mouse.current.position.ReadValue();
-
-            //clear previous list of objects
-            click_results.Clear();
-
-            //casts raycast and adds every UI collision
-            ui_raycaster.Raycast(click_data, click_results);
-
-
-            foreach(RaycastResult result in click_results)
+            if (result.gameObject.tag == "Slot")
             {
-                //if an item is a slot set selected slot to the right value
-                if (result.gameObject.tag == "Slot")
+                string index = "";
+                for (int i = result.gameObject.name.Length - 1; i > -1; i--)
                 {
-                    player_input.drop_item = false;
-                    if (selected_item_position >= 0) player.slots[selected_item_position - 1].GetComponent<Image>().color = Color.red;
-                    selected_item_position = int.Parse(result.gameObject.name.Replace("Slot ", ""));
-                    result.gameObject.GetComponent<Image>().color = Color.green;
-
-                    if (player.slots[selected_item_position - 1].GetComponent<ItemControl>().current_stack_size > 0)
+                    Debug.Log(i);
+                    if (result.gameObject.name[i] == ' ')
                     {
-                        player.inventory_details.SetActive(true);
-                        SetDetails(player.inventory_details, player.slots[selected_item_position - 1].GetComponent<ItemControl>());
+                        break;
                     }
-                    else
-                    {
-                        player.inventory_details.SetActive(false);
-                    }
-
-                    Debug.Log(selected_item_position);
-                    break;
+                    index = index + result.gameObject.name[i];
                 }
+                Debug.Log(index);
+                slot_index.Add(int.Parse(index) - 1);
+                return result.gameObject;
             }
         }
-
-        
-        if(selected_item_position >= 0)
-        {
-            //if player presses the drop key and there is something in the selected slot
-            if (player_input.drop_item && (player.slots[selected_item_position - 1].GetComponent<ItemControl>().current_stack_size != 0))
-            {
-
-                SpawnSelectedItem(player.slots[selected_item_position - 1], player.transform, 0.5f, 1f);
-                DeleteFromInventory(player.slots[selected_item_position - 1], player);
-                //reset button to allow for more drops
-                player.slots[selected_item_position - 1].GetComponent<Image>().color = Color.red;
-                player_input.drop_item = false;
-            }
-        }    
+        slot_index.Add(-1);
+        return null;
     }
 
     public void SpawnSelectedItem(GameObject item, Transform tform, float boost, float height)
@@ -102,7 +146,7 @@ public class GameplayInventoryState : GameplayBaseState
 
         //spawn object
         GameObject spawned_object = Object.Instantiate(item.GetComponent<ItemControl>().configuration.model,
-            new Vector3(tform.position.x + (tform.forward.x * tform.localScale.x), 
+            new Vector3(tform.position.x + (tform.forward.x * tform.localScale.x),
             tform.position.y + height, tform.position.z + (tform.forward.z)), Quaternion.identity);
 
         //Give it item data

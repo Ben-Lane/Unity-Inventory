@@ -12,7 +12,8 @@ public class InventoryUIHandler : MonoBehaviour
     [SerializeField] private int grid_width = 5;
     [SerializeField] private int grid_height = 3;
 
-    private int image_size = 64;
+    public int image_size = 64;
+    private int original_image_size = 64;
     [SerializeField] private float padding_value = 5f;
 
     private Vector2 slot_panel_size;
@@ -23,6 +24,7 @@ public class InventoryUIHandler : MonoBehaviour
     public GameObject slot_panel;
     [SerializeField] private GameObject slot_prefab;
     [SerializeField] private GameObject info_card;
+    [SerializeField] private GameObject drag_prefab;
 
     //list of slots
     public List<GameObject> inventory_slots = new List<GameObject>();
@@ -30,6 +32,9 @@ public class InventoryUIHandler : MonoBehaviour
     // Start is called before the first frame update
     void Start()
     {
+        slot_prefab.gameObject.transform.localScale = new Vector3(image_size / original_image_size, image_size / original_image_size, 1);
+        drag_prefab.gameObject.transform.localScale = new Vector3(image_size / original_image_size, image_size / original_image_size, 1);
+
         //Create the size of the inventory
         slot_panel_size = new Vector2(((grid_width + 1) * padding_value) + (grid_width * image_size), ((grid_height + 1) * padding_value) + (grid_height * image_size));
         inventory_panel_size = new Vector2((2 * padding_value) + slot_panel_size.x, 
