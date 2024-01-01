@@ -5,6 +5,7 @@ using Unity.VisualScripting;
 using UnityEngine;
 using UnityEngine.InputSystem;
 using UnityEngine.Events;
+using UnityEngine.UI;
 
 public class InventoryUIHandler : MonoBehaviour
 {
@@ -25,6 +26,7 @@ public class InventoryUIHandler : MonoBehaviour
     [SerializeField] private GameObject slot_prefab;
     [SerializeField] private GameObject info_card;
     [SerializeField] private GameObject drag_prefab;
+    [SerializeField] private ItemScriptableObject empty_item;
 
     //list of slots
     public List<GameObject> inventory_slots = new List<GameObject>();
@@ -65,6 +67,8 @@ public class InventoryUIHandler : MonoBehaviour
                 GameObject slot = Instantiate(slot_prefab, new Vector3(0, 0, 0), Quaternion.identity);
                 inventory_slots.Add(slot);
                 slot.AddComponent<ItemControl>();
+                slot.GetComponent<ItemControl>().configuration = empty_item;
+                slot.transform.GetChild(0).GetComponent<Image>().sprite = slot.GetComponent<ItemControl>().configuration.icon;
                 slot.name = "Slot " + (1 + ((i * grid_width) + j)).ToString();
                 slot.transform.SetParent(slot_panel.transform);
                 slot.GetComponent<RectTransform>().localPosition = new Vector3(padding_value + j * (image_size + padding_value), 

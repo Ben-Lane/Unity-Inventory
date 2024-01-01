@@ -7,6 +7,8 @@ using UnityEngine.UI;
 using TMPro;
 using System.Linq;
 using Unity.VisualScripting;
+using static UnityEditor.Progress;
+using Unity.VisualScripting.Dependencies.Sqlite;
 
 public class GameplayInventoryState : GameplayBaseState
 {
@@ -21,7 +23,13 @@ public class GameplayInventoryState : GameplayBaseState
     private GameObject drag_icon;
 
     private GameObject initial_slot;
-    private string initial_slot_stack;
+
+    private ItemScriptableObject initial_config;
+    private ItemScriptableObject new_config;
+
+    private int initial_stack_size;
+    private int new_stack_size;
+
     private List<int> slot_index = new List<int>();
 
     public override void EnterState(GameplayStateHandler player, PlayerCharacterInput player_input)
@@ -41,6 +49,7 @@ public class GameplayInventoryState : GameplayBaseState
 
     public override void UpdateState(GameplayStateHandler player, PlayerCharacterInput player_input)
     {
+        //Add image to mouse cursor when dragging an item in the inventory
         if (being_dragged)
         {
             drag_icon.transform.position = new Vector3(Mouse.current.position.x.magnitude, Mouse.current.position.y.magnitude, 0f);
@@ -50,10 +59,12 @@ public class GameplayInventoryState : GameplayBaseState
         if (Mouse.current.leftButton.wasPressedThisFrame && !being_dragged)
         {
             initial_slot = GetSlot();
+            initial_config = initial_slot.GetComponent<ItemControl>().configuration;
+            initial_stack_size = initial_slot.GetComponent<ItemControl>().current_stack_size;
             if (initial_slot != null)
             {
-                Debug.Log("Slot stack size: " + initial_slot_stack);
-                if (initial_slot.transform.GetChild(0).GetComponent<Image>().sprite != null)
+                //if they have dragged while hovering an item, allow it to be moved
+                if (initial_slot.GetComponent<ItemControl>().configuration.maximum_stack_size != 0)
                 {
                     being_dragged = true;
 
@@ -72,25 +83,20 @@ public class GameplayInventoryState : GameplayBaseState
             GameObject slot = GetSlot();
             if(slot != null && being_dragged)
             {
-                Debug.Log("Adjust slots");
-
-                ItemControl tempOriginalSlot = slot.GetComponent<ItemControl>();
-                ItemControl tempNewSlot = initial_slot.GetComponent<ItemControl>();
-
-                Debug.Log(tempOriginalSlot.current_stack_size);
-                Debug.Log(tempNewSlot.current_stack_size);
+                new_config = slot.GetComponent<ItemControl>().configuration;
+                new_stack_size = slot.GetComponent<ItemControl>().current_stack_size;
 
                 Debug.Log("updated slot " + slot_index[1]);
-                player.slots[slot_index[1]].transform.GetChild(0).GetComponent<Image>().sprite = tempNewSlot.configuration.icon;
-                player.slots[slot_index[1]].transform.GetChild(1).GetComponent<TextMeshProUGUI>().text = tempNewSlot.current_stack_size.ToString();
-                player.slots[slot_index[1]].GetComponent<ItemControl>().current_stack_size = tempNewSlot.current_stack_size;
-                player.slots[slot_index[1]].GetComponent<ItemControl>().configuration = tempNewSlot.configuration;
+                player.slots[slot_index[1]].transform.GetChild(0).GetComponent<Image>().sprite = initial_config.icon;
+                player.slots[slot_index[1]].transform.GetChild(1).GetComponent<TextMeshProUGUI>().text = initial_stack_size.ToString();
+                player.slots[slot_index[1]].GetComponent<ItemControl>().current_stack_size = initial_stack_size;
+                player.slots[slot_index[1]].GetComponent<ItemControl>().configuration = initial_config;
 
                 Debug.Log("adjusted slot " + slot_index[0]);
-                player.slots[slot_index[0]].transform.GetChild(0).GetComponent<Image>().sprite = tempOriginalSlot.configuration.icon;
-                player.slots[slot_index[0]].transform.GetChild(1).GetComponent<TextMeshProUGUI>().text = tempOriginalSlot.current_stack_size.ToString();
-                player.slots[slot_index[0]].GetComponent<ItemControl>().current_stack_size = tempOriginalSlot.current_stack_size;
-                player.slots[slot_index[0]].GetComponent<ItemControl>().configuration = tempOriginalSlot.configuration;
+                player.slots[slot_index[0]].transform.GetChild(0).GetComponent<Image>().sprite = new_config.icon;
+                if(new_stack_size > 0) player.slots[slot_index[0]].transform.GetChild(1).GetComponent<TextMeshProUGUI>().text = new_stack_size.ToString();
+                player.slots[slot_index[0]].GetComponent<ItemControl>().current_stack_size = new_stack_size;
+                player.slots[slot_index[0]].GetComponent<ItemControl>().configuration = new_config;
 
 
             }
@@ -100,7 +106,7 @@ public class GameplayInventoryState : GameplayBaseState
                 player.slots[slot_index[0]].transform.GetChild(0).GetComponent<Image>().sprite = initial_slot.GetComponent<ItemControl>().configuration.icon;
                 player.slots[slot_index[0]].transform.GetChild(1).GetComponent<TextMeshProUGUI>().text = initial_slot.GetComponent<ItemControl>().current_stack_size.ToString();
                 player.slots[slot_index[0]].GetComponent<ItemControl>().current_stack_size = initial_slot.GetComponent<ItemControl>().current_stack_size;
-                player.slots[slot_index[0]].GetComponent<ItemControl>().configuration = initial_slot.GetComponent<ItemControl>().configuration;
+                player.slots[slot_index[0]].GetComponent<ItemControl>().configuration = initial_slot.GetComponent<ItemControl>().configuration;   
             }
             slot_index.Clear();
             being_dragged = false;

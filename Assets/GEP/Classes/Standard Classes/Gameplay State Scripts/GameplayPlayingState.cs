@@ -49,11 +49,11 @@ public class GameplayPlayingState : GameplayBaseState
         Object.Destroy(collision.gameObject);
 
         //if the inventory already has some items.
-        if (player.slots.Count != 0)
+        if(player.slots.Count != 0)
         {
             //check if item already exists in the inventory, and creates a list of all its locations if so
             List<int> other_stack_locations = ItemAlreadyExists(temp_item.GetComponent<ItemControl>().configuration, player.slots);
-
+            
             //fills up existing stacks and returns the leftovers in the variable stack size.
             temp_item.GetComponent<ItemControl>().current_stack_size = CalculateStacks(temp_item.GetComponent<ItemControl>().configuration, other_stack_locations, player.slots, temp_item.GetComponent<ItemControl>().current_stack_size);
             Debug.Log(temp_item.GetComponent<ItemControl>().current_stack_size);
@@ -70,7 +70,7 @@ public class GameplayPlayingState : GameplayBaseState
                 Debug.Log("Add to visible inventory");
                 AddToInventory(temp_item, index, player.slots);
                 //update stack size
-                player.slots[item_total].transform.GetChild(1).GetComponent<TextMeshProUGUI>().text = temp_item.GetComponent<ItemControl>().current_stack_size.ToString();
+                //player.slots[item_total].transform.GetChild(1).GetComponent<TextMeshProUGUI>().text = temp_item.GetComponent<ItemControl>().current_stack_size.ToString();
 
             }
             else
@@ -104,7 +104,7 @@ public class GameplayPlayingState : GameplayBaseState
 
         for(int i = 0; i < slots.Count; i++)
         {
-            if (slots[i].transform.GetChild(0).gameObject.GetComponent<Image>().sprite == null)
+            if (slots[i].GetComponent<ItemControl>().configuration.maximum_stack_size == 0)
             {
                 index = i;
                 availability = true;
