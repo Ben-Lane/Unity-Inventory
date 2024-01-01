@@ -20,12 +20,8 @@ public class GameplayInventoryState : GameplayBaseState
     private bool being_dragged;
     private GameObject drag_icon;
 
-    //variables for storing data
-    private Sprite initial_icon;
-    private int initial_stack;
-    private Sprite new_icon;
-    private int new_stack;
-
+    private GameObject initial_slot;
+    private string initial_slot_stack;
     private List<int> slot_index = new List<int>();
 
     public override void EnterState(GameplayStateHandler player, PlayerCharacterInput player_input)
@@ -53,17 +49,17 @@ public class GameplayInventoryState : GameplayBaseState
         //initial click of drag
         if (Mouse.current.leftButton.wasPressedThisFrame && !being_dragged)
         {
-            GetSlot(ref initial_icon, ref initial_stack);
-            if (initial_icon != null)
+            initial_slot = GetSlot();
+            if (initial_slot != null)
             {
-                Debug.Log("Slot stack size: " + initial_stack);
-                if (initial_icon != null)
+                Debug.Log("Slot stack size: " + initial_slot_stack);
+                if (initial_slot.transform.GetChild(0).GetComponent<Image>().sprite != null)
                 {
                     being_dragged = true;
 
-                    drag_icon.GetComponent<Image>().sprite = initial_icon;
-                    player.slots[slot_index[0]].transform.GetChild(0).GetComponent<Image>().sprite = null;
-                    player.slots[slot_index[0]].transform.GetChild(1).GetComponent<TextMeshProUGUI>().text = "";
+                    drag_icon.GetComponent<Image>().sprite = initial_slot.transform.GetChild(0).GetComponent<Image>().sprite;
+                    initial_slot.transform.GetChild(0).GetComponent<Image>().sprite = null;
+                    initial_slot.transform.GetChild(1).GetComponent<TextMeshProUGUI>().text = "";
 
                     drag_icon.SetActive(true);
                 }
@@ -73,32 +69,38 @@ public class GameplayInventoryState : GameplayBaseState
         
         if (Mouse.current.leftButton.wasReleasedThisFrame)
         {
-            GetSlot(ref new_icon, ref new_stack);
-            if(new_icon != null && being_dragged)
+            GameObject slot = GetSlot();
+            if(slot != null && being_dragged)
             {
                 Debug.Log("Adjust slots");
 
+                ItemControl tempOriginalSlot = slot.GetComponent<ItemControl>();
+                ItemControl tempNewSlot = initial_slot.GetComponent<ItemControl>();
+
+                Debug.Log(tempOriginalSlot.current_stack_size);
+                Debug.Log(tempNewSlot.current_stack_size);
+
                 Debug.Log("updated slot " + slot_index[1]);
-                player.slots[slot_index[1]].transform.GetChild(0).GetComponent<Image>().sprite = initial_icon;
-                player.slots[slot_index[1]].transform.GetChild(1).GetComponent<TextMeshProUGUI>().text = initial_stack.ToString();
-                player.slots[slot_index[1]].GetComponent<ItemControl>().current_stack_size = initial_stack;
-                //player.slots[slot_index[1]].GetComponent<ItemControl>().configuration = tempNewSlot.configuration;
+                player.slots[slot_index[1]].transform.GetChild(0).GetComponent<Image>().sprite = tempNewSlot.configuration.icon;
+                player.slots[slot_index[1]].transform.GetChild(1).GetComponent<TextMeshProUGUI>().text = tempNewSlot.current_stack_size.ToString();
+                player.slots[slot_index[1]].GetComponent<ItemControl>().current_stack_size = tempNewSlot.current_stack_size;
+                player.slots[slot_index[1]].GetComponent<ItemControl>().configuration = tempNewSlot.configuration;
 
                 Debug.Log("adjusted slot " + slot_index[0]);
-                player.slots[slot_index[0]].transform.GetChild(0).GetComponent<Image>().sprite = new_icon;
-                player.slots[slot_index[0]].transform.GetChild(1).GetComponent<TextMeshProUGUI>().text = new_stack.ToString();
-                player.slots[slot_index[0]].GetComponent<ItemControl>().current_stack_size = new_stack;
-                //player.slots[slot_index[0]].GetComponent<ItemControl>().configuration = tempOriginalSlot.configuration;
+                player.slots[slot_index[0]].transform.GetChild(0).GetComponent<Image>().sprite = tempOriginalSlot.configuration.icon;
+                player.slots[slot_index[0]].transform.GetChild(1).GetComponent<TextMeshProUGUI>().text = tempOriginalSlot.current_stack_size.ToString();
+                player.slots[slot_index[0]].GetComponent<ItemControl>().current_stack_size = tempOriginalSlot.current_stack_size;
+                player.slots[slot_index[0]].GetComponent<ItemControl>().configuration = tempOriginalSlot.configuration;
 
 
             }
-            else if(new_icon == null && being_dragged)
+            else if(slot == null && being_dragged)
             {
                 Debug.Log("Reset slot " + slot_index[0]);
-                player.slots[slot_index[0]].transform.GetChild(0).GetComponent<Image>().sprite = initial_icon;
-                player.slots[slot_index[0]].transform.GetChild(1).GetComponent<TextMeshProUGUI>().text = initial_stack.ToString();
-                player.slots[slot_index[0]].GetComponent<ItemControl>().current_stack_size = new_stack;
-                //player.slots[slot_index[0]].GetComponent<ItemControl>().configuration = initial_slot.GetComponent<ItemControl>().configuration;
+                player.slots[slot_index[0]].transform.GetChild(0).GetComponent<Image>().sprite = initial_slot.GetComponent<ItemControl>().configuration.icon;
+                player.slots[slot_index[0]].transform.GetChild(1).GetComponent<TextMeshProUGUI>().text = initial_slot.GetComponent<ItemControl>().current_stack_size.ToString();
+                player.slots[slot_index[0]].GetComponent<ItemControl>().current_stack_size = initial_slot.GetComponent<ItemControl>().current_stack_size;
+                player.slots[slot_index[0]].GetComponent<ItemControl>().configuration = initial_slot.GetComponent<ItemControl>().configuration;
             }
             slot_index.Clear();
             being_dragged = false;
@@ -116,7 +118,7 @@ public class GameplayInventoryState : GameplayBaseState
         }
     }
 
-    void GetSlot(ref Sprite sprite, ref int stack)
+    GameObject GetSlot()
     {
         //get mouse position
         click_data.position = Mouse.current.position.ReadValue();
@@ -143,10 +145,11 @@ public class GameplayInventoryState : GameplayBaseState
                 Debug.Log(index);
                 slot_index.Add(int.Parse(index) - 1);
                 Debug.Log("Valid slot");
-                sprite = result.gameObject.GetComponent<ItemControl>().configuration.icon;
-                stack = result.gameObject.GetComponent<ItemControl>().current_stack_size;
+                return result.gameObject;
             }
         }
+        slot_index.Add(-1);
+        return null;
     }
 
     public void SpawnSelectedItem(GameObject item, Transform tform, float boost, float height)
