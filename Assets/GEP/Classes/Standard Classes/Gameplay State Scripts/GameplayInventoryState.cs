@@ -102,11 +102,23 @@ public class GameplayInventoryState : GameplayBaseState
             }
             else if(slot == null && being_dragged)
             {
+                player.slots[slot_index[0]].GetComponent<ItemControl>().current_stack_size = initial_slot.GetComponent<ItemControl>().current_stack_size;
+                player.slots[slot_index[0]].GetComponent<ItemControl>().configuration = initial_slot.GetComponent<ItemControl>().configuration;
+
+                SpawnSelectedItem(player.slots[slot_index[0]], player.transform, 0.5f, 1f);
+
+                player.slots[slot_index[0]].GetComponent<ItemControl>().configuration = player.empty_item;
+                player.slots[slot_index[0]].GetComponent<ItemControl>().current_stack_size = 0;
+                player.slots[slot_index[0]].transform.GetChild(0).GetComponent<Image>().sprite = player.slots[slot_index[0]].GetComponent<ItemControl>().configuration.icon;
+                player.slots[slot_index[0]].transform.GetChild(1).GetComponent<TextMeshProUGUI>().text = "";                
+
+                /**
                 Debug.Log("Reset slot " + slot_index[0]);
                 player.slots[slot_index[0]].transform.GetChild(0).GetComponent<Image>().sprite = initial_slot.GetComponent<ItemControl>().configuration.icon;
                 player.slots[slot_index[0]].transform.GetChild(1).GetComponent<TextMeshProUGUI>().text = initial_slot.GetComponent<ItemControl>().current_stack_size.ToString();
                 player.slots[slot_index[0]].GetComponent<ItemControl>().current_stack_size = initial_slot.GetComponent<ItemControl>().current_stack_size;
-                player.slots[slot_index[0]].GetComponent<ItemControl>().configuration = initial_slot.GetComponent<ItemControl>().configuration;   
+                player.slots[slot_index[0]].GetComponent<ItemControl>().configuration = initial_slot.GetComponent<ItemControl>().configuration;
+                **/
             }
             slot_index.Clear();
             being_dragged = false;

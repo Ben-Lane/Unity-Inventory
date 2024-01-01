@@ -13,6 +13,7 @@ public class GameplayStateHandler : MonoBehaviour
     public GameObject inventory_canvas;
     public GameObject inventory_full_text;
     public GameObject inventory_details;
+    public ItemScriptableObject empty_item;
 
     // Start is called before the first frame update
     void Start()

@@ -2665,6 +2665,7 @@ MonoBehaviour:
   inventory_canvas: {fileID: 0}
   inventory_full_text: {fileID: 213811815}
   inventory_details: {fileID: 1303989289}
+  empty_item: {fileID: 11400000, guid: f62b922e7a12b3c4d954c22af79e5415, type: 2}
 --- !u!1001 &1540187957
 PrefabInstance:
   m_ObjectHideFlags: 0
