@@ -10,10 +10,10 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 57ac7424d1228b74086cb325ec9d26a6, type: 3}
-  m_Name: Sphere
+  m_Name: Stone
   m_EditorClassIdentifier: 
-  icon: {fileID: 21300000, guid: abd00cd5df96e82439f1a42de0896938, type: 3}
-  model: {fileID: 2290750140266445946, guid: 177c4ab880ad23c4f8e58e641e0efaf5, type: 3}
-  item_name: Sphere
-  item_description: I love the round things
+  icon: {fileID: 21300000, guid: a9eb6022d1867c1469be66e21f068a1e, type: 3}
+  model: {fileID: 2208575670296416475, guid: 34f87d8e82ad25042b29b5a209fbd8f4, type: 3}
+  item_name: Stone
+  item_description: Solid as rock
   maximum_stack_size: 64

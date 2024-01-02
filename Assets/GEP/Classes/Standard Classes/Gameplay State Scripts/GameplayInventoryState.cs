@@ -21,6 +21,12 @@ public class GameplayInventoryState : GameplayBaseState
 
     private bool being_dragged;
     private GameObject drag_icon;
+    private bool hovered_over_item;
+    private GameObject desc_box;
+
+    //varioables for handling description checks
+    private PointerEventData desc_click_data;
+    private List<RaycastResult> desc_click_results;
 
     private GameObject initial_slot;
 
@@ -44,11 +50,37 @@ public class GameplayInventoryState : GameplayBaseState
         click_data = new PointerEventData(EventSystem.current);
         click_results = new List<RaycastResult>();
 
+        desc_click_data = new PointerEventData(EventSystem.current);
+        desc_click_results = new List<RaycastResult>();
+
         if (drag_icon == null) drag_icon = GameObject.Find("Canvas").transform.GetChild(0).gameObject;
+        if (desc_box == null) desc_box = GameObject.Find("Canvas").transform.GetChild(1).transform.GetChild(0).gameObject;
+
     }
 
     public override void UpdateState(GameplayStateHandler player, PlayerCharacterInput player_input)
     {
+        
+        //check mouse position at all times to display correct description
+        desc_click_data.position = Mouse.current.position.ReadValue();
+        desc_click_results.Clear();
+        ui_raycaster.Raycast(desc_click_data, desc_click_results);
+        foreach (RaycastResult result in desc_click_results)
+        {
+            if (result.gameObject.tag == "Slot")
+            {
+                if (result.gameObject.GetComponent<ItemControl>().current_stack_size > 0)
+                {
+                    desc_box.transform.parent.gameObject.SetActive(true);
+                    desc_box.transform.GetChild(0).GetComponent<TextMeshProUGUI>().text = result.gameObject.GetComponent<ItemControl>().configuration.item_name;
+                    desc_box.transform.GetChild(1).GetComponent<TextMeshProUGUI>().text = result.gameObject.GetComponent<ItemControl>().configuration.item_description;
+                    desc_box.transform.parent.gameObject.transform.position = new Vector3(Mouse.current.position.x.magnitude, Mouse.current.position.y.magnitude, 0f);
+                }
+                break;
+            }
+            desc_box.transform.parent.gameObject.SetActive(false);
+        }
+        
         //Add image to mouse cursor when dragging an item in the inventory
         if (being_dragged)
         {
